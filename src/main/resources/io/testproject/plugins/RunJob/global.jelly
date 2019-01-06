@@ -1,0 +1,12 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+                      xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+ <f:section title="TestProject Job Runner">
+    <f:entry title="API Key" field="apiKey" help="/plugin/testproject/help-apiKey.html">
+        <f:password />
+    </f:entry>
+    <f:entry title="Verbose" field="verbose" help="/plugin/testproject/help-verbose.html">
+        <f:checkbox/>
+    </f:entry>
+ </f:section>
+</j:jelly>

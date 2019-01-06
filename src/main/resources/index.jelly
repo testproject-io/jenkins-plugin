@@ -1,0 +1,5 @@
+<?jelly escape-by-default='true'?>
+
+<div>
+ This plugin triggers a TestProject Job post build.
+</div>

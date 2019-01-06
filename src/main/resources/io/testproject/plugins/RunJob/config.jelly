@@ -1,0 +1,13 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+                      xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry field="projectId" title="Project Id" help="/plugin/testproject/help-projectId.html">
+        <f:textbox />
+    </f:entry>
+    <f:entry field="jobId" title="Job Id" help="/plugin/testproject/help-jobId.html">
+        <f:textbox />
+    </f:entry>
+    <f:entry field="waitJobFinishSeconds" title="Wait to finish (secs)" help="/plugin/testproject/help-waitJobFinish.html">
+        <f:number default="${descriptor.defaultWaitJobFinishSeconds}"/>
+    </f:entry>
+</j:jelly>
