@@ -285,11 +285,8 @@ public class RunJob extends Builder implements SimpleBuildStep {
         }
 
         @Override
-        public boolean configure(StaplerRequest req, JSONObject formData)
-                throws FormException {
-
-            apiKey = formData.getString("apiKey");
-            verbose = formData.getBoolean("verbose");
+        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+            req.bindJSON(this, formData);
             save();
 
             return super.configure(req, formData);
