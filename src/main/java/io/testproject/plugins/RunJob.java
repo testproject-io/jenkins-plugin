@@ -97,20 +97,6 @@ public class RunJob extends Builder implements SimpleBuildStep {
         return BuildStepMonitor.NONE;
     }
 
-    @Override // Notifier
-    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) {
-        try {
-            LogHelper.SetLogger(listener.getLogger(), getDescriptor().isVerbose());
-            // logger which prints on job 'Console Output'
-            triggerJob(build.getNumber());
-        } catch (Exception e) {
-            LogHelper.Error(e);
-            return false;
-        }
-
-        return true;
-    }
-
     @Override // SimpleBuildStep implementation
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) {
         try {
@@ -299,11 +285,8 @@ public class RunJob extends Builder implements SimpleBuildStep {
         }
 
         @Override
-        public boolean configure(StaplerRequest req, JSONObject formData)
-                throws FormException {
-
-            apiKey = formData.getString("apiKey");
-            verbose = formData.getBoolean("verbose");
+        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+            req.bindJSON(this, formData);
             save();
 
             return super.configure(req, formData);
