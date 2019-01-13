@@ -29,7 +29,7 @@ public class ApiResponse<TData> {
         parseResponse(con);
     }
 
-    public boolean IsSuccessful() {
+    public boolean isSuccessful() {
         return statusCode >= 200 && statusCode <= 299;
     }
 
