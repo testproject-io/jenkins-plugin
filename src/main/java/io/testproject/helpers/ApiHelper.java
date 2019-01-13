@@ -93,8 +93,7 @@ public class ApiHelper {
                 } finally {
                     this.closeQuietly(writer);
                 }
-            }
-            else if (method.equals("POST") || method.equals("PUT")) {
+            } else if (method.equals("POST") || method.equals("PUT")) {
                 LogHelper.Debug("Post request with no body... Setting length to 0");
                 con.setFixedLengthStreamingMode(0);
             }
@@ -107,6 +106,8 @@ public class ApiHelper {
             LogHelper.Debug("Response from TestProject: " + status);
 
             return new ApiResponse<>(con, clazz);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             LogHelper.Error(e);
             return new ApiResponse<>(con, clazz);
