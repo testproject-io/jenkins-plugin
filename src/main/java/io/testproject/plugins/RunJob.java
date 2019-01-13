@@ -194,11 +194,11 @@ public class RunJob extends Builder implements SimpleBuildStep {
         };
 
         stateTimer.scheduleAtFixedRate(stateCheckTask, 5000, 3000); // Will check for execution state every 3 seconds starting after 5 seconds
-        latch.await(waitJobFinishSeconds, TimeUnit.SECONDS); // Waiting for timeout or the latch to reach 0
-        latch.countDown(); // Setting count to 0
+        boolean tpJobCompleted = latch.await(waitJobFinishSeconds, TimeUnit.SECONDS); // Waiting for timeout or the latch to reach 0
         stateTimer.cancel();
+        LogHelper.Debug("Latch result: " + tpJobCompleted);
 
-        if (executionState[0] == null || !executionState[0].hasFinished()) {
+        if (!tpJobCompleted || executionState[0] == null || !executionState[0].hasFinished()) {
             throw new hudson.AbortException("The execution did not finish within the defined time frame");
         }
 
