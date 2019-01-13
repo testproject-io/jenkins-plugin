@@ -83,7 +83,7 @@ public class ApiHelper {
 
                 OutputStreamWriter writer = null;
                 try {
-                    writer = new OutputStreamWriter(con.getOutputStream());
+                    writer = new OutputStreamWriter(con.getOutputStream(), "UTF-8");
                     writer.write(SerializationHelper.ToJson(body));
                     writer.flush();
                     writer.close();
@@ -93,8 +93,7 @@ public class ApiHelper {
                 } finally {
                     this.closeQuietly(writer);
                 }
-            }
-            else if (method.equals("POST") || method.equals("PUT")) {
+            } else if (method.equals("POST") || method.equals("PUT")) {
                 LogHelper.Debug("Post request with no body... Setting length to 0");
                 con.setFixedLengthStreamingMode(0);
             }
@@ -107,6 +106,8 @@ public class ApiHelper {
             LogHelper.Debug("Response from TestProject: " + status);
 
             return new ApiResponse<>(con, clazz);
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             LogHelper.Error(e);
             return new ApiResponse<>(con, clazz);

@@ -128,7 +128,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
 
             ApiResponse<ExecutionResponseData> response = apiHelper.Post(String.format(Constants.TP_RUN_JOB_URL, projectId, jobId), headers, null, null, ExecutionResponseData.class);
 
-            if (response.IsSuccessful()) {
+            if (response.isSuccessful()) {
                 if (response.getData() != null) {
                     ExecutionResponseData data = response.getData();
                     executionId = data.getId();
@@ -194,11 +194,11 @@ public class RunJob extends Builder implements SimpleBuildStep {
         };
 
         stateTimer.scheduleAtFixedRate(stateCheckTask, 5000, 3000); // Will check for execution state every 3 seconds starting after 5 seconds
-        latch.await(waitJobFinishSeconds, TimeUnit.SECONDS); // Waiting for timeout or the latch to reach 0
-        latch.countDown(); // Setting count to 0
+        boolean tpJobCompleted = latch.await(waitJobFinishSeconds, TimeUnit.SECONDS); // Waiting for timeout or the latch to reach 0
         stateTimer.cancel();
+        LogHelper.Debug("Latch result: " + tpJobCompleted);
 
-        if (executionState[0] == null || !executionState[0].hasFinished()) {
+        if (!tpJobCompleted || executionState[0] == null || !executionState[0].hasFinished()) {
             throw new hudson.AbortException("The execution did not finish within the defined time frame");
         }
 
@@ -218,7 +218,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
     private ExecutionStateResponseData checkExecutionState() throws IOException {
         ApiResponse<ExecutionStateResponseData> response = apiHelper.Get(String.format(Constants.TP_CHECK_EXECUTION_STATE_URL, projectId, jobId, executionId), ExecutionStateResponseData.class);
 
-        if (response.IsSuccessful()) {
+        if (response.isSuccessful()) {
             if (response.getData() != null) {
                 return response.getData();
             }
@@ -241,7 +241,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
         try {
             ApiResponse response = apiHelper.Post(String.format(Constants.TP_ABORT_EXECUTION_URL, projectId, jobId, executionId), Object.class);
 
-            if (!response.IsSuccessful()) {
+            if (!response.isSuccessful()) {
                 LogHelper.Info("Unable to abort TestProject job: " + response.getStatusCode());
             }
 
