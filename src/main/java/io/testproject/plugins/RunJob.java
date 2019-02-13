@@ -56,9 +56,6 @@ public class RunJob extends Builder implements SimpleBuildStep {
     }
 
     private void init() {
-        if (apiHelper != null)
-            return;
-
         LogHelper.Debug("Initializing API helper...");
         this.apiHelper = new ApiHelper(getDescriptor().getApiKey());
     }

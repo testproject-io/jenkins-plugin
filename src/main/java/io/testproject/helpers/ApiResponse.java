@@ -8,6 +8,8 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.GZIPInputStream;
 
 /**
  * API Response wrapper
@@ -90,10 +92,18 @@ public class ApiResponse<TData> {
         InputStream inputStream = null;
         try {
             inputStream = con.getInputStream();
+
+            String encoding = con.getContentEncoding();
+            LogHelper.Debug("Content encoding: " + encoding);
+
+            if ("gzip".equals(encoding)) {
+                inputStream = new GZIPInputStream(inputStream);
+            }
+
         } catch (IOException ioe) {
             LogHelper.Error(ioe);
         }
 
-        return inputStream != null ? IOUtils.toString(inputStream) : null;
+        return inputStream != null ? IOUtils.toString(inputStream, StandardCharsets.UTF_8) : null;
     }
 }

@@ -3,10 +3,9 @@ package io.testproject.helpers;
 import io.testproject.constants.Constants;
 
 import javax.annotation.Nonnull;
+import javax.net.ssl.*;
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +47,7 @@ public class ApiHelper {
 
     private <TData> ApiResponse<TData> execute(@Nonnull String method, @Nonnull String url, HashMap<String, Object> headers, Map<String, Object> queryParams, Object body, Class<TData> clazz) throws IOException {
 
-        HttpURLConnection con = null;
+        HttpsURLConnection con = null;
         try {
             if (apiKey == null || apiKey.trim().isEmpty()) {
                 throw new hudson.AbortException("No TestProject API key is configured. Please configure a valid API key in global configuration.");
@@ -60,7 +59,7 @@ public class ApiHelper {
                     ? new URL(url)
                     : new URL(url + "?" + query);
 
-            con = (HttpURLConnection) uri.openConnection();
+            con = (HttpsURLConnection) uri.openConnection();
 
             if (method.equals("POST") || method.equals("PUT")) {
                 con.setDoOutput(true);
@@ -68,7 +67,11 @@ public class ApiHelper {
 
             con.setRequestMethod(method);
             con.setRequestProperty(Constants.AUTH_HEADER, apiKey); // Setting the authorization
+            con.setRequestProperty("Accept", "application/json");
             con.setRequestProperty("Accept-Encoding", "gzip, deflate");
+            con.addRequestProperty("User-Agent", "TestProject JenkinsPlugin");
+
+            LogHelper.Debug("Using API key: " + apiKey.substring(0,4) + "***************");
 
             if (headers != null) { // Adding headers if any
                 for (HashMap.Entry<String, Object> header : headers.entrySet()) {
@@ -78,7 +81,6 @@ public class ApiHelper {
 
             if (body != null) {
                 LogHelper.Debug("Writing request body");
-
                 con.setRequestProperty("Content-Type", "application/json");
 
                 OutputStreamWriter writer = null;
@@ -94,7 +96,7 @@ public class ApiHelper {
                     this.closeQuietly(writer);
                 }
             } else if (method.equals("POST") || method.equals("PUT")) {
-                LogHelper.Debug("Post request with no body... Setting length to 0");
+                LogHelper.Debug("POST/PUT request with no body...");
                 con.setFixedLengthStreamingMode(0);
             }
 
