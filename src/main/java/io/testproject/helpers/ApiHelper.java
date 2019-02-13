@@ -4,9 +4,7 @@ import io.testproject.constants.Constants;
 
 import javax.annotation.Nonnull;
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,7 +66,10 @@ public class ApiHelper {
 
             con.setRequestMethod(method);
             con.setRequestProperty(Constants.AUTH_HEADER, apiKey); // Setting the authorization
+            con.setRequestProperty("Accept", "application/json");
             con.setRequestProperty("Accept-Encoding", "gzip, deflate");
+
+            LogHelper.Debug("Using API key: " + apiKey.substring(0,4) + "...");
 
             if (headers != null) { // Adding headers if any
                 for (HashMap.Entry<String, Object> header : headers.entrySet()) {
@@ -94,16 +95,20 @@ public class ApiHelper {
                     this.closeQuietly(writer);
                 }
             } else if (method.equals("POST") || method.equals("PUT")) {
-                LogHelper.Debug("Post request with no body... Setting length to 0");
+                LogHelper.Debug("POST/PUT request with no body... Setting length to 0");
                 con.setFixedLengthStreamingMode(0);
             }
 
             con.setConnectTimeout(Constants.DEFAULT_CONNECT_TIMEOUT);
             con.setReadTimeout(Constants.DEFAULT_READ_TIMEOUT);
 
+
+
             LogHelper.Debug("Sending " + method.toUpperCase() + " request to: " + uri.toString());
             int status = con.getResponseCode();
             LogHelper.Debug("Response from TestProject: " + status);
+
+
 
             return new ApiResponse<>(con, clazz);
         } catch (RuntimeException e) {
