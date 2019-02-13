@@ -8,6 +8,7 @@ class SerializationHelper {
     private static Gson gson = new GsonBuilder().create();
 
     static <T> T FromJson(String jsonString, Class<T> clazz) {
+        LogHelper.Debug("Deserializing: " + jsonString);
         return gson.fromJson(jsonString, clazz);
     }
 
