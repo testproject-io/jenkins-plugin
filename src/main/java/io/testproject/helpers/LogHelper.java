@@ -1,5 +1,8 @@
 package io.testproject.helpers;
 
+import hudson.model.TaskListener;
+import org.jenkinsci.plugins.workflow.steps.StepContext;
+
 import java.io.PrintStream;
 
 public class LogHelper {
@@ -12,12 +15,21 @@ public class LogHelper {
         LogHelper.verbose = verbose;
     }
 
+    public static void SetLogger(StepContext context, boolean verbose) {
+        LogHelper.logger = getTaskListener(context).getLogger();
+        LogHelper.verbose = verbose;
+    }
+
     public static void Info(String message) {
         printMessage(message);
     }
 
     public static void Error(Exception e) {
-        printMessage(e.getMessage());
+        String err = e.getMessage() != null
+                ? e.getMessage()
+                : "An unknown error occurred";
+
+        printMessage(String.format("Error: %s", err));
     }
 
     public static void Debug(String message) {
@@ -32,5 +44,16 @@ public class LogHelper {
             return;
 
         logger.println(message);
+    }
+
+    private static TaskListener getTaskListener(StepContext context) {
+        if (!context.isReady()) {
+            return null;
+        }
+        try {
+            return context.get(TaskListener.class);
+        } catch (Exception x) {
+            return null;
+        }
     }
 }

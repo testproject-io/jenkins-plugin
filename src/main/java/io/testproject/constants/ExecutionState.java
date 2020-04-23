@@ -39,5 +39,9 @@ public enum ExecutionState {
     /**
      * Execution was suspended
      */
-    Suspended
+    Suspended,
+    /**
+     * Agent is reporting execution results
+     */
+    Reporting
 }

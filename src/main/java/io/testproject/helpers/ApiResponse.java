@@ -1,12 +1,11 @@
 package io.testproject.helpers;
 
-import io.testproject.model.ApiErrorResponse;
+import io.testproject.model.ApiErrorResponseData;
 import org.apache.commons.io.IOUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.GZIPInputStream;
@@ -20,8 +19,9 @@ public class ApiResponse<TData> {
 
     private int statusCode;
     private String message;
+    private String requestId;
     private TData data;
-    private ApiErrorResponse error;
+    private ApiErrorResponseData error;
 
     private Class<TData> myType;
 
@@ -43,6 +43,10 @@ public class ApiResponse<TData> {
         return message;
     }
 
+    public String getRequestId() {
+        return requestId;
+    }
+
     public String getError() {
         return error != null ? error.getError() : "";
     }
@@ -55,19 +59,24 @@ public class ApiResponse<TData> {
         return data != null;
     }
 
+    public String generateErrorMessage(String prefix) {
+        return prefix + (statusCode > 0 ? " - " + statusCode : "") + (message != null ? " - " + message : "") + (requestId != null ? " [" + requestId  + "]": "");
+    }
+
     private void parseResponse(@Nonnull HttpURLConnection con) {
         try {
             statusCode = con.getResponseCode();
+            requestId = con.getHeaderField("RequestId");
+
             String content = getContent(con);
 
             if (statusCode >= 200 && statusCode <= 299) {
-
                 if (content != null) {
-
-                    data = SerializationHelper.FromJson(content, myType);
+                    Class<TData> clazz = myType != null ? myType :(Class<TData>) void.class;
+                    data = SerializationHelper.FromJson(content, clazz);
                 }
             } else if (statusCode == 401) {
-                error = new ApiErrorResponse("Unauthorized");
+                error = new ApiErrorResponseData("Unauthorized");
 
             } else {
                 String messageHeader = con.getHeaderField("Message");
@@ -77,7 +86,7 @@ public class ApiResponse<TData> {
                 }
 
                 if (content != null) {
-                    error = SerializationHelper.FromJson(content, ApiErrorResponse.class);
+                    error = SerializationHelper.FromJson(content, ApiErrorResponseData.class);
                 }
             }
         } catch (IOException e) {
@@ -89,19 +98,40 @@ public class ApiResponse<TData> {
     private String getContent(@Nonnull HttpURLConnection con) throws IOException {
 
         // Getting response stream
+        int responseCode = con.getResponseCode();
         InputStream inputStream = null;
         try {
-            inputStream = con.getInputStream();
+            if (200 <= responseCode && responseCode <= 299) {
+                inputStream = con.getInputStream();
+            } else {
+                inputStream = con.getErrorStream();
+            }
 
             String encoding = con.getContentEncoding();
-            LogHelper.Debug("Content encoding: " + encoding);
+            if (encoding != null)
+                LogHelper.Debug("Content encoding: " + encoding);
 
-            if ("gzip".equals(encoding)) {
+            if (encoding != null && "gzip".equals(encoding)) {
                 inputStream = new GZIPInputStream(inputStream);
             }
 
-        } catch (IOException ioe) {
-            LogHelper.Error(ioe);
+            if (inputStream == null)
+                return null;
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+
+            StringBuilder response = new StringBuilder();
+            String currentLine;
+
+            while ((currentLine = in.readLine()) != null)
+                response.append(currentLine);
+
+            in.close();
+
+            return response.toString();
+
+        } catch (IOException | NullPointerException e) {
+            LogHelper.Error(e);
         }
 
         return inputStream != null ? IOUtils.toString(inputStream, StandardCharsets.UTF_8) : null;
