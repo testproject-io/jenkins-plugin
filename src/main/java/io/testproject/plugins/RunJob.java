@@ -6,14 +6,16 @@ import hudson.Launcher;
 import hudson.model.*;
 import hudson.tasks.*;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
 import io.testproject.constants.Constants;
 import io.testproject.helpers.ApiHelper;
 import io.testproject.helpers.ApiResponse;
+import io.testproject.helpers.DescriptorHelper;
 import io.testproject.helpers.LogHelper;
-import io.testproject.model.ExecutionResponseData;
-import io.testproject.model.ExecutionStateResponseData;
+import io.testproject.model.*;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -23,11 +25,13 @@ import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
+import java.util.Timer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class RunJob extends Builder implements SimpleBuildStep {
 
+    //region Private members
     private ApiHelper apiHelper;
     private String executionId;
     private Timer stateTimer;
@@ -39,27 +43,12 @@ public class RunJob extends Builder implements SimpleBuildStep {
     private @Nonnull
     String jobId;
 
+    private String agentId;
+
     private int waitJobFinishSeconds;
+    //endregion
 
-    public RunJob() {
-        this.projectId = "";
-        this.jobId = "";
-
-        this.waitJobFinishSeconds = 0;
-    }
-
-    @DataBoundConstructor
-    public RunJob(@Nonnull String projectId, @Nonnull String jobId, int waitJobFinishSeconds) {
-        this.projectId = projectId;
-        this.jobId = jobId;
-        this.waitJobFinishSeconds = waitJobFinishSeconds;
-    }
-
-    private void init() {
-        LogHelper.Debug("Initializing API helper...");
-        this.apiHelper = new ApiHelper(getDescriptor().getApiKey());
-    }
-
+    //region Setters & Getters
     @Nonnull
     public String getProjectId() {
         return projectId;
@@ -89,6 +78,34 @@ public class RunJob extends Builder implements SimpleBuildStep {
         this.waitJobFinishSeconds = waitJobFinishSeconds;
     }
 
+    public String getAgentId() { return agentId; }
+
+    @DataBoundSetter
+    public void setAgentId(String agentId) { this.agentId = agentId; }
+    //endregion
+
+    //region Constructors
+    public RunJob() {
+        this.projectId = "";
+        this.jobId = "";
+        this.agentId = "";
+
+        this.waitJobFinishSeconds = 0;
+    }
+
+    @DataBoundConstructor
+    public RunJob(@Nonnull String projectId, @Nonnull String jobId, String agentId, int waitJobFinishSeconds) {
+        this.projectId = projectId;
+        this.jobId = jobId;
+        this.agentId = agentId;
+        this.waitJobFinishSeconds = waitJobFinishSeconds;
+    }
+    //endregion
+
+    private void init() {
+        this.apiHelper = new ApiHelper(PluginConfiguration.DESCRIPTOR.getApiKey());
+    }
+
     @Override
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
@@ -97,9 +114,15 @@ public class RunJob extends Builder implements SimpleBuildStep {
     @Override // SimpleBuildStep implementation
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) {
         try {
-            LogHelper.SetLogger(taskListener.getLogger(), getDescriptor().isVerbose());
-            // logger which prints on job 'Console Output'
+            LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
             LogHelper.Info("Sending a job run command to TestProject");
+
+            if (StringUtils.isEmpty(getProjectId()))
+                throw new Exception("The project id cannot be empty");
+
+            if (StringUtils.isEmpty(getJobId()))
+                throw new Exception("The job id cannot be empty");
+
             triggerJob(run.getNumber());
         } catch (Exception e) {
             LogHelper.Error(e);
@@ -113,17 +136,21 @@ public class RunJob extends Builder implements SimpleBuildStep {
     }
 
     private void triggerJob(Object buildNumber) throws Exception {
-
         try {
             init();
 
-            LogHelper.Info(String.format("Starting TestProject job %s under project %s...", this.jobId, this.projectId));
+            String logMsg = StringUtils.isEmpty(getAgentId())
+                    ? String.format("Starting TestProject job %s under project %s using the default agent...", this.jobId, this.projectId)
+                    : String.format("Starting TestProject job %s under project %s using agent %s...", this.jobId, this.projectId, this.agentId);
+            LogHelper.Info(logMsg);
 
             HashMap<String, Object> headers = new HashMap<>();
             headers.put(Constants.CI_NAME_HEADER, Constants.CI_NAME);
             headers.put(Constants.CI_BUILD_HEADER, buildNumber);
 
-            ApiResponse<ExecutionResponseData> response = apiHelper.Post(String.format(Constants.TP_RUN_JOB_URL, projectId, jobId), headers, null, null, ExecutionResponseData.class);
+            RunJobData body = new RunJobData(getAgentId(), true);
+
+            ApiResponse<ExecutionResponseData> response = apiHelper.Post(String.format(Constants.TP_RUN_JOB_URL, projectId, jobId), headers, null, body, ExecutionResponseData.class);
 
             if (response.isSuccessful()) {
                 if (response.getData() != null) {
@@ -134,11 +161,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
                     waitForJobFinish();
                 }
             } else {
-                int statusCode = response.getStatusCode();
-                String responseMessage = response.getMessage();
-                String message = "Unable to trigger TestProject job" + (statusCode > 0 ? " - " + statusCode : "") + (responseMessage != null ? " - " + responseMessage : "");
-
-                throw new hudson.AbortException(message);
+                throw new hudson.AbortException(response.generateErrorMessage("Unable to trigger TestProject job"));
             }
         } catch (InterruptedException ie) {
             LogHelper.Error(ie);
@@ -254,31 +277,10 @@ public class RunJob extends Builder implements SimpleBuildStep {
     @Extension
     @Symbol(Constants.TP_JOB_SYMBOL)
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-
-        private String apiKey;
-
-        private boolean verbose;
-
         public static final int defaultWaitJobFinishSeconds = Constants.DEFAULT_WAIT_TIME;
 
         public DescriptorImpl() {
             load();
-        }
-
-        public String getApiKey() {
-            return apiKey;
-        }
-
-        public void setApiKey(String apiKey) {
-            this.apiKey = apiKey;
-        }
-
-        public boolean isVerbose() {
-            return verbose;
-        }
-
-        public void setVerbose(boolean verbose) {
-            this.verbose = verbose;
         }
 
         @Override
@@ -291,7 +293,6 @@ public class RunJob extends Builder implements SimpleBuildStep {
 
         @Override
         public boolean isApplicable(@SuppressWarnings("rawtypes") Class<? extends AbstractProject> jobType) {
-
             return true;
         }
 
@@ -299,14 +300,6 @@ public class RunJob extends Builder implements SimpleBuildStep {
         @Override
         public String getDisplayName() {
             return Constants.TP_JOB_DISPLAY_NAME;
-        }
-
-        public FormValidation doCheckApiKey(@QueryParameter String value) {
-
-            if (value.isEmpty())
-                return FormValidation.error("Api Key cannot be empty");
-
-            return FormValidation.ok();
         }
 
         public FormValidation doCheckProjectId(@QueryParameter String value) {
@@ -331,6 +324,43 @@ public class RunJob extends Builder implements SimpleBuildStep {
                 return FormValidation.error("Wait for job to finish must be at least 10 seconds (0 = Don't wait)");
 
             return FormValidation.ok();
+        }
+
+        public ListBoxModel doFillProjectIdItems() {
+            return DescriptorHelper.fillProjectIdItems();
+        }
+
+        public ListBoxModel doFillAgentIdItems() {
+            HashMap<String, Object> headers = new HashMap<>();
+            headers.put(Constants.ACCEPT, Constants.APPLICATION_JSON);
+
+            ApiResponse<AgentData[]> response = null;
+            try {
+                ApiHelper apiHelper = new ApiHelper(PluginConfiguration.DESCRIPTOR.getApiKey());
+                response = apiHelper.Get(Constants.TP_RETURN_ACCOUNT_AGENTS, headers, AgentData[].class);
+
+                if (!response.isSuccessful()) {
+                    throw new hudson.AbortException(response.generateErrorMessage("Unable to fetch the agents list"));
+                }
+
+                ListBoxModel model = new ListBoxModel();
+                model.add("Select an agent to override job default", "");
+                for (AgentData agent : response.getData()) {
+                    model.add(
+                            agent.getAlias() + " [" + agent.getId() + "]",
+                            agent.getId());
+                }
+
+                return model;
+            } catch (IOException | NullPointerException e) {
+                LogHelper.Error(e);
+            }
+
+            return null;
+        }
+
+        public ListBoxModel doFillJobIdItems(@QueryParameter String projectId) {
+            return DescriptorHelper.fillJobIdItems(projectId);
         }
     }
 }

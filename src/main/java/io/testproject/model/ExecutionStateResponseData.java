@@ -6,7 +6,6 @@ import io.testproject.constants.ExecutionState;
  * Execution state response
  */
 public class ExecutionStateResponseData {
-
     /**
      * The current state of the execution
      */
