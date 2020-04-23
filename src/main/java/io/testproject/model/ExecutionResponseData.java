@@ -4,7 +4,6 @@ package io.testproject.model;
  * Execution response data
  */
 public class ExecutionResponseData {
-
     /**
      * Execution ID
      */

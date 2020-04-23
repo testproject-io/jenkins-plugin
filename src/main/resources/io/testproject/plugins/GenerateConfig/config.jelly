@@ -1,0 +1,17 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
+                      xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry field="alias" title="Agent Alias" help="/plugin/testproject/help-alias.html">
+        <f:textbox />
+    </f:entry>
+    <f:entry field="projectId" title="Project Id" help="/plugin/testproject/help-projectId.html">
+        <f:select />
+    </f:entry>
+    <f:entry field="jobId" title="Job Id" help="/plugin/testproject/help-jobIdConfig.html">
+        <f:select />
+    </f:entry>
+    <f:entry field="jobParameters" title="Job Parameters" help="/plugin/testproject/help-jobParameters.html">
+        <f:textarea />
+    </f:entry>
+</j:jelly>
+
