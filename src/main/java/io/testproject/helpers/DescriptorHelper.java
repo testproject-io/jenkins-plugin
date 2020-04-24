@@ -6,7 +6,6 @@ import io.testproject.constants.Constants;
 import io.testproject.model.JobData;
 import io.testproject.model.ProjectData;
 import io.testproject.plugins.PluginConfiguration;
-
 import java.io.IOException;
 import java.util.HashMap;
 

@@ -7,12 +7,10 @@ import io.testproject.helpers.LogHelper;
 import io.testproject.model.AgentDockerConfigData;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
-
 import javax.annotation.Nonnull;
 
 public class GenerateConfigExecution extends SynchronousNonBlockingStepExecution<AgentDockerConfigData> {
     private final transient GenerateConfig step;
-
     private static final long serialVersionUID = 1L;
 
     protected GenerateConfigExecution(@Nonnull GenerateConfig step, @Nonnull StepContext context) {
