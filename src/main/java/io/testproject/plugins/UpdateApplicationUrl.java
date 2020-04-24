@@ -1,5 +1,6 @@
 package io.testproject.plugins;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -77,6 +78,9 @@ public class UpdateApplicationUrl extends Builder implements SimpleBuildStep {
 
     //region Constructors
     public UpdateApplicationUrl() {
+        this.projectId = "";
+        this.appId = "";
+        this.applicationUrl = "";
     }
 
     @DataBoundConstructor
@@ -102,16 +106,15 @@ public class UpdateApplicationUrl extends Builder implements SimpleBuildStep {
             LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
 
             if (StringUtils.isEmpty(getProjectId()))
-                throw new Exception("The project id cannot be empty");
+                throw new AbortException("The project id cannot be empty");
 
             if (StringUtils.isEmpty(getAppId()))
-                throw new Exception("The application id cannot be empty");
+                throw new AbortException("The application id cannot be empty");
 
             init();
             updateApplicationUrl();
         } catch (Exception e) {
-            LogHelper.Error(e);
-            run.setResult(Result.FAILURE);
+            throw new AbortException(e.getMessage());
         }
     }
 
@@ -129,7 +132,7 @@ public class UpdateApplicationUrl extends Builder implements SimpleBuildStep {
                 ApplicationData.class);
 
         if (!response.isSuccessful()) {
-            throw new hudson.AbortException(response.generateErrorMessage("Unable to update the project parameter"));
+            throw new AbortException(response.generateErrorMessage("Unable to update the project parameter"));
         }
 
         LogHelper.Info(String.format("Successfully updated the application '%s' in project '%s' to URL: '%s'",
@@ -210,7 +213,7 @@ public class UpdateApplicationUrl extends Builder implements SimpleBuildStep {
                 response = apiHelper.Get(String.format(Constants.TP_RETURN_APP_FILE, projectId), headers, ApplicationData[].class);
 
                 if (!response.isSuccessful()) {
-                    throw new hudson.AbortException(response.generateErrorMessage("Unable to fetch the applications list"));
+                    throw new AbortException(response.generateErrorMessage("Unable to fetch the applications list"));
                 }
 
                 ListBoxModel model = new ListBoxModel();

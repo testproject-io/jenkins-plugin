@@ -1,5 +1,6 @@
 package io.testproject.plugins;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -103,24 +104,23 @@ public class UpdateProjectParameter extends Builder implements SimpleBuildStep {
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) {
+    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws AbortException {
         try {
             LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
 
             if (StringUtils.isEmpty(getProjectId()))
-                throw new Exception("The project id cannot be empty");
+                throw new AbortException("The project id cannot be empty");
 
             if (StringUtils.isEmpty(getParameterId()))
-                throw new Exception("The project parameter id cannot be empty");
+                throw new AbortException("The project parameter id cannot be empty");
 
             if (StringUtils.isEmpty(getParameterValue()))
-                throw new Exception("The parameter value cannot be empty");
+                throw new AbortException("The parameter value cannot be empty");
 
             init();
             updateProjectParameter();
         } catch (Exception e) {
-            LogHelper.Error(e);
-            run.setResult(Result.FAILURE);
+            throw new AbortException(e.getMessage());
         }
     }
 
@@ -138,7 +138,7 @@ public class UpdateProjectParameter extends Builder implements SimpleBuildStep {
                 ProjectParameterData.class);
 
         if (!response.isSuccessful()) {
-            throw new hudson.AbortException(response.generateErrorMessage("Unable to update the project parameter"));
+            throw new AbortException(response.generateErrorMessage("Unable to update the project parameter"));
         }
 
         LogHelper.Info(String.format("Successfully updated project parameter '%s' in project '%s' to value: '%s'",
@@ -153,9 +153,10 @@ public class UpdateProjectParameter extends Builder implements SimpleBuildStep {
     @Extension
     @Symbol(Constants.TP_PROJ_PARAM_SYMBOL)
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-        private String parameterValue;
 
-        public DescriptorImpl() { load(); }
+        public DescriptorImpl() {
+            load();
+        }
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
@@ -218,7 +219,7 @@ public class UpdateProjectParameter extends Builder implements SimpleBuildStep {
                 response = apiHelper.Get(String.format(Constants.TP_RETURN_PROJECT_PARAMETERS, projectId), headers, ProjectParameterData[].class);
 
                 if (!response.isSuccessful()) {
-                    throw new hudson.AbortException(response.generateErrorMessage("Unable to fetch the project parameters list"));
+                    throw new AbortException(response.generateErrorMessage("Unable to fetch the project parameters list"));
                 }
 
                 ListBoxModel model = new ListBoxModel();

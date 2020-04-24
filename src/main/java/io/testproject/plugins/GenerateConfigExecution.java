@@ -1,16 +1,17 @@
 package io.testproject.plugins;
 
+import hudson.AbortException;
 import hudson.model.Result;
 import io.testproject.helpers.ApiHelper;
 import io.testproject.helpers.LogHelper;
 import io.testproject.model.AgentDockerConfigData;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
-
 import javax.annotation.Nonnull;
 
 public class GenerateConfigExecution extends SynchronousNonBlockingStepExecution<AgentDockerConfigData> {
-    private transient GenerateConfig step;
+    private final transient GenerateConfig step;
+    private static final long serialVersionUID = 1L;
 
     protected GenerateConfigExecution(@Nonnull GenerateConfig step, @Nonnull StepContext context) {
         super(context);
@@ -18,16 +19,13 @@ public class GenerateConfigExecution extends SynchronousNonBlockingStepExecution
     }
 
     @Override
-    protected AgentDockerConfigData run() {
+    protected AgentDockerConfigData run() throws AbortException {
         try {
             init();
             return step.generateAgentConfigToken();
         } catch (Exception e) {
-            LogHelper.Error(e);
-            getContext().setResult(Result.FAILURE);
+            throw new AbortException(e.getMessage());
         }
-
-        return null;
     }
 
     private void init() {

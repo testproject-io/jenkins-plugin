@@ -1,5 +1,6 @@
 package io.testproject.plugins;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -77,6 +78,9 @@ public class UpdateApplicationFile extends Builder implements SimpleBuildStep {
 
     //region Constructors
     public UpdateApplicationFile() {
+        this.projectId = "";
+        this.appId = "";
+        this.filePath = "";
     }
 
     @DataBoundConstructor
@@ -102,16 +106,15 @@ public class UpdateApplicationFile extends Builder implements SimpleBuildStep {
             LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
 
             if (StringUtils.isEmpty(getProjectId()))
-                throw new Exception("The project id cannot be empty");
+                throw new AbortException("The project id cannot be empty");
 
             if (StringUtils.isEmpty(getAppId()))
-                throw new Exception("The application id cannot be empty");
+                throw new AbortException("The application id cannot be empty");
 
             init();
             updateApplicationFile();
         } catch (Exception e) {
-            LogHelper.Error(e);
-            run.setResult(Result.FAILURE);
+            throw new AbortException(e.getMessage());
         }
     }
 
@@ -131,7 +134,6 @@ public class UpdateApplicationFile extends Builder implements SimpleBuildStep {
     @Extension
     @Symbol(Constants.TP_APP_FILE_SYMBOL)
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-        private String filePath;
 
         public DescriptorImpl() { load(); }
 
@@ -196,7 +198,7 @@ public class UpdateApplicationFile extends Builder implements SimpleBuildStep {
                 response = apiHelper.Get(String.format(Constants.TP_RETURN_APP_FILE, projectId), headers, ApplicationData[].class);
 
                 if (!response.isSuccessful()) {
-                    throw new hudson.AbortException(response.generateErrorMessage("Unable to fetch the applications list"));
+                    throw new AbortException(response.generateErrorMessage("Unable to fetch the applications list"));
                 }
 
                 ListBoxModel model = new ListBoxModel();
@@ -204,7 +206,7 @@ public class UpdateApplicationFile extends Builder implements SimpleBuildStep {
                 for (ApplicationData application : response.getData()) {
                     if (!application.getPlatform().equals("Web")) // only iOS & Android applications
                         model.add(
-                                application.getName() + " [" + application.getId() + "]",
+                                application.getPlatform() + ": " + application.getName() + " [" + application.getId() + "]",
                                 application.getId());
                 }
 

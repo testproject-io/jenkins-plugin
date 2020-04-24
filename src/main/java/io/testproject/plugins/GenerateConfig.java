@@ -45,6 +45,10 @@ public class GenerateConfig extends Step {
     }
 
     public GenerateConfig() {
+        this.alias = "";
+        this.projectId = "";
+        this.jobId = "";
+        this.jobParameters = "";
     }
     //endregion
 
@@ -111,13 +115,13 @@ public class GenerateConfig extends Step {
                 AgentDockerConfigData.class);
 
         if (!response.isSuccessful()) {
-            throw new hudson.AbortException(response.generateErrorMessage("Unable to generate agent configuration token"));
+            throw new AbortException(response.generateErrorMessage("Unable to generate agent configuration token"));
         }
 
         AgentDockerConfigData data = response.getData();
 
         if (data == null) {
-            throw new hudson.AbortException(response.generateErrorMessage("Unable to generate agent configuration token"));
+            throw new AbortException(response.generateErrorMessage("Unable to generate agent configuration token"));
         }
 
         return data;
@@ -134,7 +138,7 @@ public class GenerateConfig extends Step {
 
         // if the user provided browsers without job id, fail the step
         if (StringUtils.isEmpty(jobId) && jobParams != null)
-            throw new hudson.AbortException("Cannot set job parameters without job id");
+            throw new AbortException("Cannot set job parameters without job id");
 
         // if the user did not provide an alias and jobId, send the body as null
         if (StringUtils.isEmpty(alias) && StringUtils.isEmpty(jobId))

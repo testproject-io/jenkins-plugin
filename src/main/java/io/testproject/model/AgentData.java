@@ -27,16 +27,6 @@ public class AgentData {
     private String machineName;
 
     /**
-     * The type of the machine's processor
-     */
-    private String processorType;
-
-    /**
-     * Amount of physical memory of the machine
-     */
-    private String physicalMemory;
-
-    /**
      * Type of the operating system
      */
     private String osType;
@@ -46,39 +36,8 @@ public class AgentData {
      */
     private String osVersion;
 
-    /**
-     * The status of the agent (private/public)
-     */
-    private String status;
-
-    /**
-     * The state of the agent (ENUM)
-     */
-    private AgentState state;
-
-    /**
-     * Last time that the connection with the agent occurred
-     */
-    private String lastHeartBeat;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getAlias() {
-        return alias;
-    }
-
     public void setAlias(String alias) {
         this.alias = alias;
-    }
-
-    public String getVersion() {
-        return version;
     }
 
     public void setVersion(String version) {
@@ -93,26 +52,6 @@ public class AgentData {
         this.machineName = machineName;
     }
 
-    public String getProcessorType() {
-        return processorType;
-    }
-
-    public void setProcessorType(String processorType) {
-        this.processorType = processorType;
-    }
-
-    public String getPhysicalMemory() {
-        return physicalMemory;
-    }
-
-    public void setPhysicalMemory(String physicalMemory) {
-        this.physicalMemory = physicalMemory;
-    }
-
-    public String getOsType() {
-        return osType;
-    }
-
     public void setOsType(String osType) {
         this.osType = osType;
     }
@@ -125,27 +64,23 @@ public class AgentData {
         this.osVersion = osVersion;
     }
 
-    public String getStatus() {
-        return status;
+    public String getId() {
+        return id;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public AgentState getState() {
-        return state;
+    public String getAlias() {
+        return alias;
     }
 
-    public void setState(AgentState state) {
-        this.state = state;
+    public String getVersion() {
+        return version;
     }
 
-    public String getLastHeartBeat() {
-        return lastHeartBeat;
-    }
-
-    public void setLastHeartBeat(String lastHeartBeat) {
-        this.lastHeartBeat = lastHeartBeat;
+    public String getOsType() {
+        return osType;
     }
 }

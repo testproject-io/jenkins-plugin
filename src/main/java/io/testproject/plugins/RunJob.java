@@ -1,5 +1,6 @@
 package io.testproject.plugins;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -78,10 +79,14 @@ public class RunJob extends Builder implements SimpleBuildStep {
         this.waitJobFinishSeconds = waitJobFinishSeconds;
     }
 
-    public String getAgentId() { return agentId; }
+    public String getAgentId() {
+        return agentId;
+    }
 
     @DataBoundSetter
-    public void setAgentId(String agentId) { this.agentId = agentId; }
+    public void setAgentId(String agentId) {
+        this.agentId = agentId;
+    }
     //endregion
 
     //region Constructors
@@ -112,21 +117,20 @@ public class RunJob extends Builder implements SimpleBuildStep {
     }
 
     @Override // SimpleBuildStep implementation
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) {
+    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws AbortException {
         try {
             LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
             LogHelper.Info("Sending a job run command to TestProject");
 
             if (StringUtils.isEmpty(getProjectId()))
-                throw new Exception("The project id cannot be empty");
+                throw new AbortException("The project id cannot be empty");
 
             if (StringUtils.isEmpty(getJobId()))
-                throw new Exception("The job id cannot be empty");
+                throw new AbortException("The job id cannot be empty");
 
             triggerJob(run.getNumber());
         } catch (Exception e) {
-            LogHelper.Error(e);
-            run.setResult(Result.FAILURE);
+            throw new AbortException(e.getMessage());
         }
     }
 
@@ -161,7 +165,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
                     waitForJobFinish();
                 }
             } else {
-                throw new hudson.AbortException(response.generateErrorMessage("Unable to trigger TestProject job"));
+                throw new AbortException(response.generateErrorMessage("Unable to trigger TestProject job"));
             }
         } catch (InterruptedException ie) {
             LogHelper.Error(ie);
@@ -219,7 +223,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
         LogHelper.Debug("Latch result: " + tpJobCompleted);
 
         if (!tpJobCompleted || executionState[0] == null || !executionState[0].hasFinished()) {
-            throw new hudson.AbortException("The execution did not finish within the defined time frame");
+            throw new AbortException("The execution did not finish within the defined time frame");
         }
 
         if (!executionState[0].getReport().isEmpty()) {
@@ -229,7 +233,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
         if (executionState[0].hasFinishedWithErrors()) {
             String error = executionState[0].getMessage();
 
-            throw new hudson.AbortException("The execution has finish with errors" + (error != null ? ": " + error : ""));
+            throw new AbortException("The execution has finish with errors" + (error != null ? ": " + error : ""));
         }
 
         LogHelper.Info("The execution has finished successfully!");
@@ -244,7 +248,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
             }
         }
 
-        throw new hudson.AbortException("Unable to get execution state!");
+        throw new AbortException("Unable to get execution state!");
     }
 
     private void abortExecution() {
@@ -340,14 +344,16 @@ public class RunJob extends Builder implements SimpleBuildStep {
                 response = apiHelper.Get(Constants.TP_RETURN_ACCOUNT_AGENTS, headers, AgentData[].class);
 
                 if (!response.isSuccessful()) {
-                    throw new hudson.AbortException(response.generateErrorMessage("Unable to fetch the agents list"));
+                    throw new AbortException(response.generateErrorMessage("Unable to fetch the agents list"));
                 }
 
                 ListBoxModel model = new ListBoxModel();
                 model.add("Select an agent to override job default", "");
                 for (AgentData agent : response.getData()) {
-                    model.add(
-                            agent.getAlias() + " [" + agent.getId() + "]",
+                    if (agent.getOsType().equals("Unknown"))
+                        continue;
+
+                    model.add(agent.getAlias() + " (v" + agent.getVersion() + " on " + agent.getOsType() + ") [" + agent.getId() + "]",
                             agent.getId());
                 }
 

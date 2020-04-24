@@ -1,5 +1,6 @@
 package io.testproject.plugins;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -32,7 +33,6 @@ public class UpdateDataSourceFile extends Builder implements SimpleBuildStep {
 
     //region Private members
     private ApiHelper apiHelper;
-    private String executionId;
 
     private @Nonnull
     String projectId;
@@ -78,6 +78,9 @@ public class UpdateDataSourceFile extends Builder implements SimpleBuildStep {
 
     //region Constructors
     public UpdateDataSourceFile() {
+        this.projectId = "";
+        this.dataSourceId = "";
+        this.filePath = "";
     }
 
     @DataBoundConstructor
@@ -103,16 +106,15 @@ public class UpdateDataSourceFile extends Builder implements SimpleBuildStep {
             LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
 
             if (StringUtils.isEmpty(getProjectId()))
-                throw new Exception("The project id cannot be empty");
+                throw new AbortException("The project id cannot be empty");
 
             if (StringUtils.isEmpty(getDataSourceId()))
-                throw new Exception("The data source id cannot be empty");
+                throw new AbortException("The data source id cannot be empty");
 
             init();
             updateDataSourceFile();
         } catch (Exception e) {
-            LogHelper.Error(e);
-            run.setResult(Result.FAILURE);
+            throw new AbortException(e.getMessage());
         }
     }
 
@@ -199,7 +201,7 @@ public class UpdateDataSourceFile extends Builder implements SimpleBuildStep {
                         DataSourceData[].class);
 
                 if (!response.isSuccessful()) {
-                    throw new hudson.AbortException(response.generateErrorMessage("Unable to fetch the data sources list"));
+                    throw new AbortException(response.generateErrorMessage("Unable to fetch the data sources list"));
                 }
 
                 ListBoxModel model = new ListBoxModel();

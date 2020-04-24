@@ -23,7 +23,7 @@ public class ApiResponse<TData> {
     private TData data;
     private ApiErrorResponseData error;
 
-    private Class<TData> myType;
+    private final Class<TData> myType;
 
     ApiResponse(HttpURLConnection con, Class<TData> clazz) {
         this.myType = clazz;
@@ -72,7 +72,7 @@ public class ApiResponse<TData> {
 
             if (statusCode >= 200 && statusCode <= 299) {
                 if (content != null) {
-                    Class<TData> clazz = myType != null ? myType :(Class<TData>) void.class;
+                    Class<TData> clazz = myType != null ? myType : (Class<TData>) void.class;
                     data = SerializationHelper.FromJson(content, clazz);
                 }
             } else if (statusCode == 401) {
@@ -118,7 +118,7 @@ public class ApiResponse<TData> {
             if (inputStream == null)
                 return null;
 
-            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+            BufferedReader in = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
 
             StringBuilder response = new StringBuilder();
             String currentLine;

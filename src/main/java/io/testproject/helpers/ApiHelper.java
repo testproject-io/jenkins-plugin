@@ -1,5 +1,6 @@
 package io.testproject.helpers;
 
+import hudson.AbortException;
 import io.testproject.constants.Constants;
 import javax.annotation.Nonnull;
 import javax.net.ssl.*;
@@ -67,7 +68,7 @@ public class ApiHelper {
         HttpsURLConnection con = null;
         try {
             if (apiKey == null || apiKey.trim().isEmpty()) {
-                throw new hudson.AbortException("No TestProject API key is configured. Please configure a valid API key in global configuration.");
+                throw new AbortException("No TestProject API key is configured. Please configure a valid API key in global configuration.");
             }
 
             String query = generateQueryString(queryParams);
@@ -153,7 +154,7 @@ public class ApiHelper {
                 LogHelper.Info(String.format("An unknown error occurred while sending the API request [requestId: %s]", reqId));
             }
 
-            return new ApiResponse<>(con, clazz);
+            throw e;
         } finally {
             if (con != null)
                 con.disconnect();

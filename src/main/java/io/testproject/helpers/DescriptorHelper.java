@@ -1,11 +1,11 @@
 package io.testproject.helpers;
 
+import hudson.AbortException;
 import hudson.util.ListBoxModel;
 import io.testproject.constants.Constants;
 import io.testproject.model.JobData;
 import io.testproject.model.ProjectData;
 import io.testproject.plugins.PluginConfiguration;
-
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -23,7 +23,7 @@ public class DescriptorHelper {
             response = apiHelper.Get(Constants.TP_RETURN_ACCOUNT_PROJECTS, headers, ProjectData[].class);
 
             if (!response.isSuccessful()) {
-                response.generateErrorMessage("Unable to fetch the projects list");
+                LogHelper.Debug(response.generateErrorMessage("Unable to fetch the projects list"));
 
                 model.add("Invalid TestProject API key. Make sure you are using a valid API key in the global Jenkins configuration");
                 return model;
@@ -60,7 +60,7 @@ public class DescriptorHelper {
             if (!response.isSuccessful()) {
                 String message = response.generateErrorMessage("Unable to fetch the project's jobs list");
 
-                throw new hudson.AbortException(message);
+                throw new AbortException(message);
             }
 
             ListBoxModel model = new ListBoxModel();

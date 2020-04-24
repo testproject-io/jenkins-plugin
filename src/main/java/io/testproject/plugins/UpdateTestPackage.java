@@ -1,5 +1,6 @@
 package io.testproject.plugins;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -38,7 +39,6 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
 
     //region Private members
     private ApiHelper apiHelper;
-    private String executionId;
     private boolean resolveConflicts;
 
     private @Nonnull
@@ -94,6 +94,10 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
 
     //region Constructors
     public UpdateTestPackage() {
+        this.projectId = "";
+        this.testPackageId = "";
+        this.filePath = "";
+        this.resolveConflicts = false;
     }
 
     @DataBoundConstructor
@@ -120,20 +124,19 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
             LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
 
             if (StringUtils.isEmpty(getProjectId()))
-                throw new Exception("The project id cannot be empty");
+                throw new AbortException("The project id cannot be empty");
 
             if (StringUtils.isEmpty(getTestPackageId()))
-                throw new Exception("The test package id cannot be empty");
+                throw new AbortException("The test package id cannot be empty");
 
             File file = new File(getFilePath());
             if (!file.exists() || !file.isFile())
-                throw new hudson.AbortException(String.format("File '%s' does not exist", filePath));
+                throw new AbortException(String.format("File '%s' does not exist", filePath));
 
             init();
             updateTestPackage();
         } catch (Exception e) {
-            LogHelper.Error(e);
-            run.setResult(Result.FAILURE);
+            throw new AbortException(e.getMessage());
         }
     }
 
@@ -155,7 +158,7 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
                 ProjectParameterData.class);
 
         if (response == null || !response.isSuccessful()) {
-            throw new hudson.AbortException(response.generateErrorMessage("Unable to update the test package"));
+            throw new AbortException(response.generateErrorMessage("Unable to update the test package"));
         }
 
         LogHelper.Info(String.format("Successfully updated test package '%s' in project '%s' to file '%s'",
@@ -170,9 +173,6 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
     @Extension
     @Symbol(Constants.TP_TEST_PACKAGE_SYMBOL)
     public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
-        private String testPackageId;
-        private String filePath;
-        private boolean resolveConflicts;
 
         public DescriptorImpl() { load(); }
 
@@ -237,7 +237,7 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
                 response = apiHelper.Get(String.format(Constants.TP_RETURN_TEST_PACKAGES, projectId), headers, TestPackageData[].class);
 
                 if (!response.isSuccessful()) {
-                    throw new hudson.AbortException(response.generateErrorMessage("Unable to fetch the test packages list"));
+                    throw new AbortException(response.generateErrorMessage("Unable to fetch the test packages list"));
                 }
 
                 ListBoxModel model = new ListBoxModel();

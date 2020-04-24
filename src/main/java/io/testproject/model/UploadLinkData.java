@@ -8,7 +8,7 @@ public class UploadLinkData {
     /**
      * Request method: GET, POST, PUT, etc.
      */
-    private Method method;
+    private MethodData method;
 
     public String getUrl() {
         return url;
@@ -18,26 +18,11 @@ public class UploadLinkData {
         this.url = url;
     }
 
-    public Method getMethod() {
+    public MethodData getMethod() {
         return method;
     }
 
-    public void setMethod(Method method) {
+    public void setMethod(MethodData method) {
         this.method = method;
-    }
-
-    private class Method {
-        /**
-         * Request method: GET, POST, PUT, etc.
-         */
-        private String method;
-
-        public String getMethod() {
-            return method;
-        }
-
-        public void setMethod(String method) {
-            this.method = method;
-        }
     }
 }

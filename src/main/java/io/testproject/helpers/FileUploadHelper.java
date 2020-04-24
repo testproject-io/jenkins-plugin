@@ -1,5 +1,6 @@
 package io.testproject.helpers;
 
+import hudson.AbortException;
 import io.testproject.constants.Constants;
 import io.testproject.model.FileNameData;
 import io.testproject.model.UploadLinkData;
@@ -9,11 +10,11 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class FileUploadHelper {
-    private ApiHelper apiHelper;
-    private String projectId;
-    private String artifactId;
-    private String filePath;
-    private String actionName;
+    private final ApiHelper apiHelper;
+    private final String projectId;
+    private final String artifactId;
+    private final String filePath;
+    private final String actionName;
 
     public FileUploadHelper(ApiHelper apiHelper, String projectId, String artifactId, String filePath, String actionName) {
         this.apiHelper = apiHelper;
@@ -53,13 +54,12 @@ public class FileUploadHelper {
                 UploadLinkData.class);
 
         if (response == null || !response.isSuccessful())
-            throw new hudson.AbortException(String.format("Failed to initialize TestProject artifact '%s' update in project '%s'", artifactId, projectId));
+            throw new AbortException(String.format("Failed to initialize TestProject artifact '%s' update in project '%s'", artifactId, projectId));
 
-        if (response.getData() != null) {
-            return response.getData().getUrl();
-        }
+        if (response.getData() == null)
+            throw new AbortException(String.format("Failed to initialize TestProject artifact '%s' update in project '%s'", artifactId, projectId));
 
-        return null;
+        return response.getData().getUrl();
     }
 
     private boolean uploadFile(String uploadLink, File file) throws IOException {
@@ -77,7 +77,7 @@ public class FileUploadHelper {
                 null);
 
         if (response == null || !response.isSuccessful())
-            throw new hudson.AbortException(String.format("Failed to upload the artifact '%s' to TestProject", file.getPath()));
+            throw new AbortException(String.format("Failed to upload the artifact '%s' to TestProject", file.getPath()));
 
         return true;
     }
@@ -97,7 +97,7 @@ public class FileUploadHelper {
                 void.class);
 
         if (response == null || !response.isSuccessful())
-            throw new hudson.AbortException(String.format("Failed to update artifact '%s' in TestProject", fileName));
+            throw new AbortException(String.format("Failed to update artifact '%s' in TestProject", fileName));
 
         return true;
     }
