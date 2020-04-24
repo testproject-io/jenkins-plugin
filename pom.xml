@@ -10,7 +10,7 @@
     <artifactId>testproject</artifactId>
     <version>2.2-SNAPSHOT</version>
     <packaging>hpi</packaging>
-    <url>https://wiki.jenkins.io/display/JENKINS/TestProject+Plugin</url>
+    <url>https://github.com/jenkinsci/testproject-plugin</url>
     <properties>
         <jenkins.version>2.150.3</jenkins.version>
         <java.level>8</java.level>
