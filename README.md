@@ -1,8 +1,12 @@
 # TestProject plugin for Jenkins
 
+![](https://storage-static.testproject.io/jenkins/tp-jenkins-banner.jpg)
+
 [TestProject](https://testproject.io) plugin for Jenkins provides an easy way to execute TestProject jobs, update applications, data sources, project parameter, test packages and generate configuration for the TestProject Agent.
 
-> This plugin supports both FreeStyle and Pipeline jobs.
+![](https://img.shields.io/jenkins/plugin/v/testproject?color=%2307003c&style=for-the-badge)
+![](https://img.shields.io/jenkins/plugin/i/testproject?style=for-the-badge)
+![](https://img.shields.io/github/license/jenkinsci/testproject-plugin?style=for-the-badge)
 
 # Prerequisites
 
@@ -15,6 +19,8 @@ In order to use this plugin you need to have:
 * Install the plugin.
 * Go to project Configure > TestProject.
 * Set your TestProject API Key (which can be obtained [here](https://app.testproject.io/#/developers/api)).
+
+> This plugin supports both FreeStyle and Pipeline jobs.
 
 # Build Steps
 
@@ -120,7 +126,7 @@ The step accepts the following parameters:
 ### Pipeline syntax
 
 ```groovy
-tpTestPackageUpdate filePath: '<FILE_PATH>', projectId: '<PROJECT_ID>', resolveConflicts: <TRUE/FALSE>, testPackageId: '<TEST_PACKAGE_ID>'
+tpTestPackageUpdate filePath: '<FILE_PATH>', projectId: '<PROJECT_ID>', resolveConflicts: '<TRUE/FALSE>', testPackageId: '<TEST_PACKAGE_ID>'
 ```
 
 ## Generating TestProject Agent Configuration
