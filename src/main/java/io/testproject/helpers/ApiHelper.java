@@ -118,7 +118,7 @@ public class ApiHelper {
                     OutputStreamWriter writer = null;
                     try {
                         writer = new OutputStreamWriter(con.getOutputStream(), "UTF-8");
-                        writer.write(SerializationHelper.ToJson(body));
+                        writer.write(SerializationHelper.toJson(body));
                         writer.flush();
                         writer.close();
                     } catch (IOException e) {

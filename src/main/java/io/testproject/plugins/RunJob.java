@@ -1,5 +1,7 @@
 package io.testproject.plugins;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
@@ -9,10 +11,7 @@ import hudson.tasks.*;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import io.testproject.constants.Constants;
-import io.testproject.helpers.ApiHelper;
-import io.testproject.helpers.ApiResponse;
-import io.testproject.helpers.DescriptorHelper;
-import io.testproject.helpers.LogHelper;
+import io.testproject.helpers.*;
 import io.testproject.model.*;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
@@ -47,6 +46,8 @@ public class RunJob extends Builder implements SimpleBuildStep {
     private String agentId;
 
     private int waitJobFinishSeconds;
+
+    private String executionParameters;
     //endregion
 
     //region Setters & Getters
@@ -87,6 +88,16 @@ public class RunJob extends Builder implements SimpleBuildStep {
     public void setAgentId(String agentId) {
         this.agentId = agentId;
     }
+
+    public String getExecutionParameters() {
+        return executionParameters;
+    }
+
+    @DataBoundSetter
+    public void setExecutionParameters(String executionParameters) {
+        this.executionParameters = executionParameters;
+    }
+
     //endregion
 
     //region Constructors
@@ -94,16 +105,17 @@ public class RunJob extends Builder implements SimpleBuildStep {
         this.projectId = "";
         this.jobId = "";
         this.agentId = "";
-
         this.waitJobFinishSeconds = 0;
+        this.executionParameters = "";
     }
 
     @DataBoundConstructor
-    public RunJob(@Nonnull String projectId, @Nonnull String jobId, String agentId, int waitJobFinishSeconds) {
+    public RunJob(@Nonnull String projectId, @Nonnull String jobId, String agentId, int waitJobFinishSeconds, String executionParameters) {
         this.projectId = projectId;
         this.jobId = jobId;
         this.agentId = agentId;
         this.waitJobFinishSeconds = waitJobFinishSeconds;
+        this.executionParameters = executionParameters;
     }
     //endregion
 
@@ -152,9 +164,12 @@ public class RunJob extends Builder implements SimpleBuildStep {
             headers.put(Constants.CI_NAME_HEADER, Constants.CI_NAME);
             headers.put(Constants.CI_BUILD_HEADER, buildNumber);
 
-            RunJobData body = new RunJobData(getAgentId(), true);
-
-            ApiResponse<ExecutionResponseData> response = apiHelper.Post(String.format(Constants.TP_RUN_JOB_URL, projectId, jobId), headers, null, body, ExecutionResponseData.class);
+            ApiResponse<ExecutionResponseData> response = apiHelper.Post(
+                    String.format(Constants.TP_RUN_JOB_URL, projectId, jobId),
+                    headers,
+                    null,
+                    generateRequestBody(),
+                    ExecutionResponseData.class);
 
             if (response.isSuccessful()) {
                 if (response.getData() != null) {
@@ -173,6 +188,22 @@ public class RunJob extends Builder implements SimpleBuildStep {
                 abortExecution();
             }
         }
+    }
+
+    private JsonObject generateRequestBody() throws AbortException {
+        JsonObject executionData = null;
+
+        try {
+            executionData = SerializationHelper.fromJson(executionParameters, JsonObject.class);
+        } catch (JsonSyntaxException e) {
+            throw new AbortException(e.getMessage());
+        }
+
+        // In case the user has selected an agent from the dropdown list, use it in the executionParameters object
+        if (!StringUtils.isEmpty(getAgentId()))
+            executionData.addProperty("agentId", getAgentId());
+
+        return executionData;
     }
 
     private void waitForJobFinish() throws IOException, InterruptedException {
@@ -326,6 +357,41 @@ public class RunJob extends Builder implements SimpleBuildStep {
 
             if (!(value == 0 || value >= 10))
                 return FormValidation.error("Wait for job to finish must be at least 10 seconds (0 = Don't wait)");
+
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckExecutionParameters(@QueryParameter String value, @QueryParameter String agentId) {
+
+            // Initial state where the user has just started to create the build step
+            if (StringUtils.isEmpty(value) && StringUtils.isEmpty(agentId))
+                return FormValidation.ok();
+
+            JsonObject executionParams = null;
+            try {
+                executionParams = SerializationHelper.fromJson(value, JsonObject.class);
+
+                // In case the value parameter is empty
+                if (executionParams == null)
+                    return FormValidation.ok();
+
+            } catch (JsonSyntaxException e) {
+                return FormValidation.error("Invalid JSON object");
+            }
+
+            // In case the user did not select agent from the dropdown and/or in the JSON object, return ok.
+            if ((executionParams.get("agentId") != null && StringUtils.isEmpty(executionParams.get("agentId").getAsString())) || StringUtils.isEmpty(agentId))
+                return FormValidation.ok();
+
+            // In case the user has selected the same agentId in the dropdown and in the JSON object, no need to show a warning
+            if ((executionParams.get("agentId") != null && StringUtils.equals(executionParams.get("agentId").getAsString(), agentId)))
+                return FormValidation.ok();
+
+            // In case the user has selected two different agents in the dropdown and in the JSON object, show warning
+            if (executionParams.get("agentId") != null &&
+                    !StringUtils.isEmpty(executionParams.get("agentId").getAsString()) &&
+                    !StringUtils.isEmpty(agentId))
+                return FormValidation.warning("You've selected an agent and specified a different one in executionParameters. The job will be executed on the selected agent.");
 
             return FormValidation.ok();
         }

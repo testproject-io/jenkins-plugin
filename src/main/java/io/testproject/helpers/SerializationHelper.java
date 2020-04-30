@@ -3,16 +3,16 @@ package io.testproject.helpers;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-class SerializationHelper {
+public class SerializationHelper {
 
     private static Gson gson = new GsonBuilder().create();
 
-    static <T> T FromJson(String jsonString, Class<T> clazz) {
+    public static <T> T fromJson(String jsonString, Class<T> clazz) {
         LogHelper.Debug("Deserializing: " + jsonString);
         return gson.fromJson(jsonString, clazz);
     }
 
-    static String ToJson(Object data) {
+    public static String toJson(Object data) {
         return gson.toJson(data);
     }
 }
