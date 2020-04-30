@@ -1,9 +1,5 @@
 # TestProject plugin for Jenkins
 
-![](https://storage-static.testproject.io/jenkins/tp-jenkins-banner.jpg)
-
-[TestProject](https://testproject.io) plugin for Jenkins provides an easy way to execute TestProject jobs, update applications, data sources, project parameter, test packages and generate configuration for the TestProject Agent.
-
 [![](https://storage-static.testproject.io/jenkins/tp-jenkins-banner.jpg)]()
 
 [TestProject](https://testproject.io) plugin for Jenkins provides an easy way to execute TestProject jobs, update applications, data sources, project parameter, test packages and generate configuration for the TestProject Agent.
