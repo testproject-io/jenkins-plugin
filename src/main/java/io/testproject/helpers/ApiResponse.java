@@ -73,7 +73,7 @@ public class ApiResponse<TData> {
             if (statusCode >= 200 && statusCode <= 299) {
                 if (content != null) {
                     Class<TData> clazz = myType != null ? myType : (Class<TData>) void.class;
-                    data = SerializationHelper.FromJson(content, clazz);
+                    data = SerializationHelper.fromJson(content, clazz);
                 }
             } else if (statusCode == 401) {
                 error = new ApiErrorResponseData("Unauthorized");
@@ -86,7 +86,7 @@ public class ApiResponse<TData> {
                 }
 
                 if (content != null) {
-                    error = SerializationHelper.FromJson(content, ApiErrorResponseData.class);
+                    error = SerializationHelper.fromJson(content, ApiErrorResponseData.class);
                 }
             }
         } catch (IOException e) {

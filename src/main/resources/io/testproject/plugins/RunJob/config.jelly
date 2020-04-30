@@ -13,5 +13,8 @@
     <f:entry field="waitJobFinishSeconds" title="Wait to finish (secs)" help="/plugin/testproject/help-waitJobFinish.html">
         <f:number default="${descriptor.defaultWaitJobFinishSeconds}"/>
     </f:entry>
+    <f:entry field="executionParameters" title="Execution Parameters" help="/plugin/testproject/help-executionParameters.html">
+        <f:textarea />
+    </f:entry>
 </j:jelly>
 

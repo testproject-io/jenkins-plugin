@@ -1,0 +1,39 @@
+<div>
+    A JSON object that allows to override the job's default settings for a specific execution:
+    <pre>
+          <code>
+            {
+              "agentId": "string",
+              "browsers": [
+                "Chrome"
+              ],
+              "devices": [
+                "string"
+              ],
+              "queue": true,
+              "restartDriver": true,
+              "projectParameters": {
+                "ProjectParameter1": "Value1",
+                "ProjectParameter2": "Value2",
+                "ProjectParameter3": "Value3"
+              },
+              "testParameters": [
+                {
+                  "testId": "string",
+                  "testPosition": 0,
+                  "dataSourceId": "string",
+                  "reinstallApp": true,
+                  "data": [
+                    {
+                      "TestParameter1": "Value1",
+                      "TestParameter2": "Value2",
+                      "TestParameter3": "Value3"
+                    }
+                  ]
+                }
+              ]
+            }
+          </code>
+        </pre>
+    For more information, click <a href="https://api.testproject.io/docs/v2/#/Jobs/Jobs_RunJobAsync">here</a>
+</div>
