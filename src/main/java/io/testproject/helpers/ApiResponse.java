@@ -2,9 +2,13 @@ package io.testproject.helpers;
 
 import io.testproject.model.ApiErrorResponseData;
 import org.apache.commons.io.IOUtils;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
@@ -72,8 +76,14 @@ public class ApiResponse<TData> {
 
             if (statusCode >= 200 && statusCode <= 299) {
                 if (content != null) {
-                    Class<TData> clazz = myType != null ? myType : (Class<TData>) void.class;
-                    data = SerializationHelper.fromJson(content, clazz);
+                    if (this.myType == Document.class) {
+                        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                        DocumentBuilder builder = factory.newDocumentBuilder();
+                        data = (TData) builder.parse(new InputSource(new StringReader(content)));
+                    } else {
+                        Class<TData> clazz = myType != null ? myType : (Class<TData>) void.class;
+                        data = SerializationHelper.fromJson(content, clazz);
+                    }
                 }
             } else if (statusCode == 401) {
                 error = new ApiErrorResponseData("Unauthorized");
@@ -89,7 +99,7 @@ public class ApiResponse<TData> {
                     error = SerializationHelper.fromJson(content, ApiErrorResponseData.class);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

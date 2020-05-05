@@ -24,6 +24,7 @@ public class Constants {
     public static final String TP_RETURN_DATA_SOURCES = TP_BASE_URL + "/v2/projects/%s/data-sources";
     public static final String TP_GENERATE_AGENT_CONFIG_TOKEN_URL = TP_BASE_URL + "/v2/agents/config";
     public static final String TP_UPDATE_APP_URL = TP_BASE_URL + "/v2/projects/%s/applications/%s";
+    public static final String TP_GET_JUNIT_XML_REPORT = TP_BASE_URL + "/v2/projects/%s/jobs/%s/reports/%s";
 
     public static final int DEFAULT_CONNECT_TIMEOUT = 90000;
     public static final int DEFAULT_READ_TIMEOUT = 90000;
@@ -55,9 +56,15 @@ public class Constants {
     public static final String CI_BUILD_HEADER = "CI-Build";
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
+    public static final String APPLICATION_XML = "application/xml";
     public static final String CACHE_CONTROL_HEADER = "cache-control";
     public static final String NO_CACHE = "no-cache";
     public static final String CONTENT_LENGTH = "Content-length";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String RESOLVE_CONFLICTS = "resolveConflicts";
+    public static final String DETAILS = "details";
+    public static final String FORMAT = "format";
+
+    public static final String JUNIT_FILE_PREFIX = "JUnitReport_";
+    public static final String FORMAT_JUNIT = "JUnit";
 }

@@ -15,15 +15,25 @@ import io.testproject.helpers.*;
 import io.testproject.model.*;
 import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.w3c.dom.Document;
 
 import javax.annotation.Nonnull;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.CountDownLatch;
@@ -44,10 +54,9 @@ public class RunJob extends Builder implements SimpleBuildStep {
     String jobId;
 
     private String agentId;
-
     private int waitJobFinishSeconds;
-
     private String executionParameters;
+    private String junitResultsFile;
     //endregion
 
     //region Setters & Getters
@@ -98,6 +107,15 @@ public class RunJob extends Builder implements SimpleBuildStep {
         this.executionParameters = executionParameters;
     }
 
+    public String getJunitResultsFile() {
+        return junitResultsFile;
+    }
+
+    @DataBoundSetter
+    public void setJunitResultsFile(String junitResultsFile) {
+        this.junitResultsFile = junitResultsFile;
+    }
+
     //endregion
 
     //region Constructors
@@ -107,15 +125,17 @@ public class RunJob extends Builder implements SimpleBuildStep {
         this.agentId = "";
         this.waitJobFinishSeconds = 0;
         this.executionParameters = "";
+        this.junitResultsFile = "";
     }
 
     @DataBoundConstructor
-    public RunJob(@Nonnull String projectId, @Nonnull String jobId, String agentId, int waitJobFinishSeconds, String executionParameters) {
+    public RunJob(@Nonnull String projectId, @Nonnull String jobId, String agentId, int waitJobFinishSeconds, String executionParameters, String junitResultsFile) {
         this.projectId = projectId;
         this.jobId = jobId;
         this.agentId = agentId;
         this.waitJobFinishSeconds = waitJobFinishSeconds;
         this.executionParameters = executionParameters;
+        this.junitResultsFile = junitResultsFile;
     }
     //endregion
 
@@ -128,7 +148,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
         return BuildStepMonitor.NONE;
     }
 
-    @Override // SimpleBuildStep implementation
+    @Override
     public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws AbortException {
         try {
             LogHelper.SetLogger(taskListener.getLogger(), PluginConfiguration.DESCRIPTOR.isVerbose());
@@ -140,7 +160,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
             if (StringUtils.isEmpty(getJobId()))
                 throw new AbortException("The job id cannot be empty");
 
-            triggerJob(run.getNumber());
+            triggerJob(run.getNumber(), filePath);
         } catch (Exception e) {
             throw new AbortException(e.getMessage());
         }
@@ -151,7 +171,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
         return (DescriptorImpl) super.getDescriptor();
     }
 
-    private void triggerJob(Object buildNumber) throws Exception {
+    private void triggerJob(Object buildNumber, FilePath filePath) throws Exception {
         try {
             init();
 
@@ -177,7 +197,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
                     executionId = data.getId();
                     LogHelper.Info("Execution id: " + executionId);
 
-                    waitForJobFinish();
+                    waitForJobFinish(filePath);
                 }
             } else {
                 throw new AbortException(response.generateErrorMessage("Unable to trigger TestProject job"));
@@ -195,6 +215,8 @@ public class RunJob extends Builder implements SimpleBuildStep {
 
         try {
             executionData = SerializationHelper.fromJson(executionParameters, JsonObject.class);
+            if (executionData == null)
+                executionData = new JsonObject();
         } catch (JsonSyntaxException e) {
             throw new AbortException(e.getMessage());
         }
@@ -206,7 +228,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
         return executionData;
     }
 
-    private void waitForJobFinish() throws IOException, InterruptedException {
+    private void waitForJobFinish(FilePath filePath) throws IOException, InterruptedException {
         if (this.waitJobFinishSeconds == 0) {
             LogHelper.Info("Will not wait for execution to finish");
             LogHelper.Info(String.format("Job %s under project %s was started successfully", this.jobId, this.projectId));
@@ -257,6 +279,17 @@ public class RunJob extends Builder implements SimpleBuildStep {
             throw new AbortException("The execution did not finish within the defined time frame");
         }
 
+        if (tpJobCompleted && !StringUtils.isEmpty(junitResultsFile)) {
+            LogHelper.Info(String.format("Generating an XML report for execution '%s'", executionId));
+            File outputFile = getJUnitFilePath();
+
+            if (outputFile == null)
+                return;
+
+            if (!getJUnitXMLReport(outputFile, filePath))
+                LogHelper.Info(String.format("Failed to generate a JUnit XML report for execution '%s'", executionId));
+        }
+
         if (!executionState[0].getReport().isEmpty()) {
             LogHelper.Info("Report: " + executionState[0].getReport());
         }
@@ -268,6 +301,88 @@ public class RunJob extends Builder implements SimpleBuildStep {
         }
 
         LogHelper.Info("The execution has finished successfully!");
+    }
+
+    private File getJUnitFilePath() {
+        try {
+            File file = new File(junitResultsFile);
+            String fileExtension = FilenameUtils.getExtension(file.getName());
+
+            // If it's empty, it means that the user did not specify a file name and we need to create one
+            if (StringUtils.isEmpty(fileExtension)) {
+
+                // Make sure that the directory exists
+                if (!Files.exists(Paths.get(file.getPath()))) {
+                    LogHelper.Info(String.format("The directory '%s' does not exist", file.getPath()));
+                    return null;
+                }
+
+                // Generating a unique filename
+                StringBuilder sb = new StringBuilder();
+                sb.append(file.getAbsolutePath())
+                        .append(File.separator)
+                        .append(Constants.JUNIT_FILE_PREFIX)
+                        .append(new SimpleDateFormat("dd-MM-yy-HHmm").format(new Date()))
+                        .append(".xml");
+
+                return new File(sb.toString());
+            } else {
+                // Check if the file extension is xml
+                if (!fileExtension.equals("xml")) {
+                    LogHelper.Info(String.format("Invalid file extension '%s'. Only XML format is allowed.", fileExtension));
+                    return null;
+                }
+
+                // Paths will throw IOExceptions if the path is not valid
+                Paths.get(file.getPath());
+                return file;
+            }
+        } catch (Exception e) {
+            LogHelper.Error(e);
+            return null;
+        }
+    }
+
+    private boolean getJUnitXMLReport(File outputFile, FilePath filePath) throws IOException {
+        HashMap<String, Object> headers = new HashMap<>();
+        headers.put(Constants.ACCEPT, Constants.APPLICATION_XML);
+
+        Map<String, Object> queries = new HashMap<>();
+        queries.put(Constants.DETAILS, true);
+        queries.put(Constants.FORMAT, Constants.FORMAT_JUNIT);
+
+        ApiResponse<Document> response = apiHelper.Get(
+                String.format(Constants.TP_GET_JUNIT_XML_REPORT, projectId, jobId, executionId),
+                headers,
+                queries,
+                Document.class);
+
+        if (response.isSuccessful()) {
+            if (response.getData() != null) {
+                try {
+                    StringWriter sw = new StringWriter();
+                    Transformer transformer = TransformerFactory.newInstance().newTransformer();
+
+                    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+                    transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+                    transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+
+                    transformer.transform(new DOMSource(response.getData()), new StreamResult(sw));
+
+                    FilePath fp = new FilePath(filePath, outputFile.getPath());
+                    fp.write(sw.toString(), "UTF-8");
+
+                    LogHelper.Info(String.format("JUnit XML report for execution '%s' was stored in '%s'", executionId, fp.getRemote()));
+                } catch (Exception e) {
+                    LogHelper.Error(e);
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private ExecutionStateResponseData checkExecutionState() throws IOException {
