@@ -4,9 +4,9 @@
 
 [TestProject](https://testproject.io) plugin for Jenkins provides an easy way to execute TestProject jobs, update applications, data sources, project parameter, test packages and generate configuration for the TestProject Agent.
 
-[![Version](https://img.shields.io/jenkins/plugin/v/testproject?color=%2307003c&style=for-the-badge)]()
-[![Installs](https://img.shields.io/jenkins/plugin/i/testproject?style=for-the-badge)]()
-[![License](https://img.shields.io/github/license/jenkinsci/testproject-plugin?style=for-the-badge)]()
+[![Version](https://img.shields.io/jenkins/plugin/v/testproject?color=%2307003c&style=for-the-badge)](https://plugins.jenkins.io/testproject/)
+[![Installs](https://img.shields.io/jenkins/plugin/i/testproject?style=for-the-badge)](https://plugins.jenkins.io/testproject/)
+[![License](https://img.shields.io/github/license/jenkinsci/testproject-plugin?style=for-the-badge)](https://github.com/jenkinsci/testproject-plugin/blob/master/LICENSE.md)
 
 # Prerequisites
 
