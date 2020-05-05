@@ -345,7 +345,6 @@ public class RunJob extends Builder implements SimpleBuildStep {
 
     private boolean getJUnitXMLReport(File outputFile, FilePath filePath) throws IOException {
         HashMap<String, Object> headers = new HashMap<>();
-        headers.put(Constants.ACCEPT, Constants.APPLICATION_XML);
 
         Map<String, Object> queries = new HashMap<>();
         queries.put(Constants.DETAILS, true);

@@ -79,7 +79,7 @@ public class ApiResponse<TData> {
                     if (this.myType == Document.class) {
                         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
                         DocumentBuilder builder = factory.newDocumentBuilder();
-                        data = (TData) builder.parse(new InputSource(new StringReader(content)));
+                        data = (TData) builder.parse(new InputSource(new ByteArrayInputStream(content.getBytes("UTF-8"))));
                     } else {
                         Class<TData> clazz = myType != null ? myType : (Class<TData>) void.class;
                         data = SerializationHelper.fromJson(content, clazz);
