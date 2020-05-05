@@ -75,7 +75,7 @@ To trigger a job, you need to provide the following parameters:
 ### Pipeline syntax
 
 ```groovy
-tpJobRun agentId: '<AGENT_ID>', executionParameters: '<EXECUTION_PARAMETERS>', jobId: '<JOB_ID>', projectId: '<PROJECT_ID>', waitJobFinishSeconds: 180
+tpJobRun projectId: '<PROJECT_ID>', jobId: '<JOB_ID>', agentId: '<AGENT_ID>', waitJobFinishSeconds: 180, junitResultsFile: '<JUNIT_RESULTS_FILE>', executionParameters: '<EXECUTION_PARAMETERS>'
 ```
 
 ## Updating a Mobile Application (apk/ipa) File
