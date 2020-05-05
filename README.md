@@ -29,17 +29,18 @@ Using this step, you can trigger TestProject jobs as part of your Jenkins build.
 To trigger a job, you need to provide the following parameters:
 * `projectId` - The ID of the project containing the job.
 * `jobId` - The ID of the job to execute.
-* `agentId` - The ID of the TestProject agent that will execute the job. Leave this field empty to use the default agent defined for this job.
+* `agentId` _(optional)_ - The ID of the TestProject agent that will execute the job. Leave this field empty to use the default agent defined for this job.
 * `waitJobFinishSeconds` - How many seconds should the step wait for the automation job to finish. If **0** is provided, the setup will not wait for the job to finish execution.
-* `executionParameters` - A JSON object that allows you to override the job's default settings and parameters for a single execution. Here's the `executionParameters` format:
+* `junitResultsFile` _(optional)_ - Path (including the file name) to a file where the JUnit XML report will be stored.
+* `executionParameters` _(optional)_ - A JSON object that allows you to override the job's default settings and parameters for a single execution. Here's an example:
+
 ```JSON
 {
-  "agentId": "string",
   "browsers": [
     "Chrome"
   ],
   "devices": [
-    "string"
+    "AAA111BBB"
   ],
   "queue": true,
   "restartDriver": true,
@@ -220,4 +221,3 @@ Addons: https://addons.testproject.io
 Docker Hub: https://hub.docker.com/r/testproject/agent
 
 YouTube: https://www.youtube.com/channel/UCEAPPxNvHT74Xj6Ixt28mNw
-
