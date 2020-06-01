@@ -86,7 +86,8 @@ public class ApiHelper {
             con.setRequestMethod(method);
             if (clazz != null)
                 con.setRequestProperty(Constants.AUTH_HEADER, apiKey); // Setting the authorization
-            con.setRequestProperty("Accept", "application/json");
+
+            con.setRequestProperty("Accept", "*/*");
             con.setRequestProperty("Accept-Encoding", "gzip, deflate");
             con.addRequestProperty("User-Agent", "TestProject JenkinsPlugin");
 

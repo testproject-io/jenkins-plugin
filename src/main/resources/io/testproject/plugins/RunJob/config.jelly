@@ -13,6 +13,9 @@
     <f:entry field="waitJobFinishSeconds" title="Wait to finish (secs)" help="/plugin/testproject/help-waitJobFinish.html">
         <f:number default="${descriptor.defaultWaitJobFinishSeconds}"/>
     </f:entry>
+    <f:entry field="junitResultsFile" title="Path to the JUnit XML report" help="/plugin/testproject/help-junitResultsFile.html">
+        <f:textbox />
+    </f:entry>
     <f:entry field="executionParameters" title="Execution Parameters" help="/plugin/testproject/help-executionParameters.html">
         <f:textarea />
     </f:entry>
