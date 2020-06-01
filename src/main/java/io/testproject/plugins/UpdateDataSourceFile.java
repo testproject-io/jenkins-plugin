@@ -5,7 +5,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
-import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
@@ -27,6 +26,7 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class UpdateDataSourceFile extends Builder implements SimpleBuildStep {
@@ -112,15 +112,19 @@ public class UpdateDataSourceFile extends Builder implements SimpleBuildStep {
                 throw new AbortException("The data source id cannot be empty");
 
             init();
-            updateDataSourceFile();
+            updateDataSourceFile(filePath);
         } catch (Exception e) {
             throw new AbortException(e.getMessage());
         }
     }
 
-    private void updateDataSourceFile() throws IOException {
+    private void updateDataSourceFile(FilePath fp) throws IOException, InterruptedException {
+        // Create a list of allowed file formats
+        ArrayList<String> validExtensions = new ArrayList<String>();
+        validExtensions.add("csv");
+
         // Creating instance of FileUploadHelper
-        FileUploadHelper helper = new FileUploadHelper(apiHelper, projectId, dataSourceId, filePath, Constants.TP_DATA_SOURCE_SYMBOL);
+        FileUploadHelper helper = new FileUploadHelper(apiHelper, projectId, dataSourceId, filePath, Constants.TP_DATA_SOURCE_SYMBOL, fp, validExtensions);
 
         // Update the file in TestProject
         helper.updateFile();

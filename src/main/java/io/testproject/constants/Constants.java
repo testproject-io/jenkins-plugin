@@ -64,6 +64,7 @@ public class Constants {
     public static final String RESOLVE_CONFLICTS = "resolveConflicts";
     public static final String DETAILS = "details";
     public static final String FORMAT = "format";
+    public static final String FILE_NAME = "fileName";
 
     public static final String JUNIT_FILE_PREFIX = "JUnitReport_";
     public static final String FORMAT_JUNIT = "JUnit";

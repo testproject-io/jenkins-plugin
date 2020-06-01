@@ -23,15 +23,19 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.annotation.Nonnull;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -281,7 +285,7 @@ public class RunJob extends Builder implements SimpleBuildStep {
 
         if (tpJobCompleted && !StringUtils.isEmpty(junitResultsFile)) {
             LogHelper.Info(String.format("Generating an XML report for execution '%s'", executionId));
-            File outputFile = getJUnitFilePath();
+            File outputFile = getJUnitFilePath(filePath);
 
             if (outputFile == null)
                 return;
@@ -303,23 +307,24 @@ public class RunJob extends Builder implements SimpleBuildStep {
         LogHelper.Info("The execution has finished successfully!");
     }
 
-    private File getJUnitFilePath() {
+    private File getJUnitFilePath(FilePath filePath) {
         try {
             File file = new File(junitResultsFile);
+            FilePath fp = new FilePath(filePath, file.getPath());
             String fileExtension = FilenameUtils.getExtension(file.getName());
 
             // If it's empty, it means that the user did not specify a file name and we need to create one
             if (StringUtils.isEmpty(fileExtension)) {
 
                 // Make sure that the directory exists
-                if (!Files.exists(Paths.get(file.getPath()))) {
+                if (!fp.exists()) {
                     LogHelper.Info(String.format("The directory '%s' does not exist", file.getPath()));
                     return null;
                 }
 
                 // Generating a unique filename
                 StringBuilder sb = new StringBuilder();
-                sb.append(file.getAbsolutePath())
+                sb.append(fp.getRemote())
                         .append(File.separator)
                         .append(Constants.JUNIT_FILE_PREFIX)
                         .append(new SimpleDateFormat("dd-MM-yy-HHmm").format(new Date()))
@@ -359,17 +364,27 @@ public class RunJob extends Builder implements SimpleBuildStep {
         if (response.isSuccessful()) {
             if (response.getData() != null) {
                 try {
-                    StringWriter sw = new StringWriter();
+                    XPath xPath = XPathFactory.newInstance().newXPath();
+                    NodeList nodeList = (NodeList) xPath.evaluate("//text()[normalize-space()='']", response.getData(), XPathConstants.NODESET);
+
+                    for (int i = 0; i < nodeList.getLength(); ++i) {
+                        Node node = nodeList.item(i);
+                        node.getParentNode().removeChild(node);
+                    }
+
                     Transformer transformer = TransformerFactory.newInstance().newTransformer();
-
-                    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-                    transformer.setOutputProperty(OutputKeys.METHOD, "xml");
                     transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+                    transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+                    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+                    transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
 
-                    transformer.transform(new DOMSource(response.getData()), new StreamResult(sw));
+                    StringWriter stringWriter = new StringWriter();
+                    StreamResult streamResult = new StreamResult(stringWriter);
+
+                    transformer.transform(new DOMSource(response.getData()), streamResult);
 
                     FilePath fp = new FilePath(filePath, outputFile.getPath());
-                    fp.write(sw.toString(), "UTF-8");
+                    fp.write(stringWriter.toString(), "UTF-8");
 
                     LogHelper.Info(String.format("JUnit XML report for execution '%s' was stored in '%s'", executionId, fp.getRemote()));
                 } catch (Exception e) {

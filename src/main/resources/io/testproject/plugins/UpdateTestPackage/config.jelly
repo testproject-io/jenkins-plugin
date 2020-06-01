@@ -7,7 +7,7 @@
     <f:entry field="testPackageId" title="Test Package Id" help="/plugin/testproject/help-testPackageId.html">
         <f:select />
     </f:entry>
-    <f:entry field="filePath" title="Path to the .jar/.dll/.zip" help="/plugin/testproject/help-filePath.html">
+    <f:entry field="filePath" title="Path to the .jar/.dll/.zip" help="/plugin/testproject/help-testPackageFilePath.html">
         <f:textbox />
     </f:entry>
     <f:entry field="resolveConflicts" title="Resolve Conflicts?" help="/plugin/testproject/help-resolveConflicts.html">
