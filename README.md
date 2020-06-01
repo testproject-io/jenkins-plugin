@@ -31,7 +31,7 @@ To trigger a job, you need to provide the following parameters:
 * `jobId` - The ID of the job to execute.
 * `agentId` _(optional)_ - The ID of the TestProject agent that will execute the job. Leave this field empty to use the default agent defined for this job.
 * `waitJobFinishSeconds` - How many seconds should the step wait for the automation job to finish. If **0** is provided, the setup will not wait for the job to finish execution.
-* `junitResultsFile` _(optional)_ - Path (including the file name) to a file where the JUnit XML report will be stored.
+* `junitResultsFile` _(optional)_ - Path (including the file name) to a file where the JUnit XML report will be stored. The file path can be absolute or relative to your workspace.
 * `executionParameters` _(optional)_ - A JSON object that allows you to override the job's default settings and parameters for a single execution. Here's an example:
 
 ```JSON
@@ -83,7 +83,7 @@ Using this step, you can update an existing Android or iOS application file as p
 The step accepts the following parameters:
 * `projectId` - The ID of the project in containing the application.
 * `applicationId` - The ID of the application to update.
-* `filePath` - The path to `apk/ipa` file.
+* `filePath` - The path to `apk/ipa` file. The file path can be absolute or relative to your workspace.
 
 ### Free Style syntax
  
@@ -117,7 +117,7 @@ Using this step, you can update an existing data source file (`.csv`).<br>
 This step accepts the following parameters:
 * `projectId` - The ID of the project containing the data source.
 * `dataSourceId` - The ID of the data source to update.
-* `filePath` - The path to the data source (`.csv`) file.
+* `filePath` - The path to the data source (`.csv`) file. The file path can be absolute or relative to your workspace.
 
 ### Free Style syntax
   
@@ -151,7 +151,7 @@ Using this step, you can update an existing test package (coded test) in your pr
 The step accepts the following parameters:
 * `projectId` - The ID of the project containing the test package.
 * `testPackageId` - The ID of the test package to update.
-* `filePath` - The path to the new test package.
+* `filePath` - The path to the new test package file (`.jar`/`.dll`/`.zip`). The file path can be absolute or relative to your workspace.
 * `resolveConflicts` [true/false] - Should TestProject try to automatically resolve conflicts.<br>
   A conflict may arise if the updated test package is used by other tests or the new packages contains breaking changes such as removed test cases, etc.
 

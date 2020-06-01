@@ -5,7 +5,6 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
-import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
@@ -14,10 +13,7 @@ import hudson.tasks.Builder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import io.testproject.constants.Constants;
-import io.testproject.helpers.ApiHelper;
-import io.testproject.helpers.ApiResponse;
-import io.testproject.helpers.DescriptorHelper;
-import io.testproject.helpers.LogHelper;
+import io.testproject.helpers.*;
 import io.testproject.model.ProjectParameterData;
 import io.testproject.model.TestPackageData;
 import jenkins.tasks.SimpleBuildStep;
@@ -32,6 +28,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -129,32 +126,31 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
             if (StringUtils.isEmpty(getTestPackageId()))
                 throw new AbortException("The test package id cannot be empty");
 
-            File file = new File(getFilePath());
-            if (!file.exists() || !file.isFile())
-                throw new AbortException(String.format("File '%s' does not exist", filePath));
-
             init();
-            updateTestPackage();
+            updateTestPackage(filePath);
         } catch (Exception e) {
             throw new AbortException(e.getMessage());
         }
     }
 
-    private void updateTestPackage() throws IOException {
+    private void updateTestPackage(FilePath fp) throws IOException, InterruptedException {
         LogHelper.Info(String.format("Updating test package '%s' in project '%s' with file '%s'",
                 getTestPackageId(), getProjectId(), getFilePath()));
+
+        File testPackageFile = getTestPackageFile(fp);
 
         HashMap<String, Object> headers = new HashMap<>();
         headers.put(Constants.CONTENT_TYPE, Constants.APPLICATION_OCTET_STREAM);
 
         Map<String, Object> queries = new HashMap<>();
         queries.put(Constants.RESOLVE_CONFLICTS, isResolveConflicts());
+        queries.put(Constants.FILE_NAME, testPackageFile.getName());
 
         ApiResponse<ProjectParameterData> response = apiHelper.Post(
                 String.format(Constants.TP_UPDATE_TEST_PACKAGE, getProjectId(), getTestPackageId()),
                 headers,
                 queries,
-                new File(getFilePath()),
+                testPackageFile,
                 ProjectParameterData.class);
 
         if (response == null || !response.isSuccessful()) {
@@ -163,6 +159,19 @@ public class UpdateTestPackage extends Builder implements SimpleBuildStep {
 
         LogHelper.Info(String.format("Successfully updated test package '%s' in project '%s' to file '%s'",
                 getTestPackageId(), getProjectId(), getFilePath()));
+    }
+
+    private File getTestPackageFile(FilePath fp) throws IOException, InterruptedException {
+        // Create a list of allowed file formats
+        ArrayList<String> validExtensions = new ArrayList<String>();
+        validExtensions.add("jar");
+        validExtensions.add("dll");
+        validExtensions.add("zip");
+
+        // Creating instance of FileUploadHelper
+        FileUploadHelper helper = new FileUploadHelper();
+
+        return helper.getFileToUpload(filePath, fp, validExtensions);
     }
 
     @Override
